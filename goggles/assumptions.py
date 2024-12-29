@@ -1,25 +1,13 @@
-from collections import namedtuple
+import itertools
 from pathlib import Path
-from typing import Any
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.stats import f_oneway, chisquare, shapiro, probplot, levene, tukey_hsd
+import plotly.colors
+import plotly.express as px
+from scipy.stats import chisquare, levene, probplot, shapiro
 
-TestResult = namedtuple('TestResult', ('statistic', 'pvalue'))
-
-
-def one_way_anova(*groups, alpha: float = 0.05) -> bool:
-    res = TestResult._make(f_oneway(*groups))
-    print('\nANOVA Test for Equality of Means')
-    if res.pvalue <= alpha:
-        print("Reject the null hypothesis: Some of the groups' averages consider to be not equal.")
-    else:
-        print(
-            f"Fail to reject the null hypothesis: The average of all groups assumed to be equal."
-        )
-    print(f"F Statistic: {res.statistic:.4f}, P-value: {res.pvalue:.4f}")
-    return res.pvalue <= alpha
+from goggles.stats import TestResult
 
 
 def equal_size_samples(*groups, alpha=0.05) -> bool:
@@ -92,30 +80,27 @@ def equal_variances(*groups: pd.Series, alpha: float = 0.05) -> bool:
     return res.pvalue > alpha
 
 
-def tukey_hsd_results_info(names, res, alpha=0.05):
-
-    max_name_len = max(len(name) for name in names)
-
-    confidence_level = res.confidence_interval(confidence_level=1 - alpha)
-    s = ("Tukey's HSD Pairwise Group Comparisons"
-         f" ({(1 - alpha) * 100:.1f}% Confidence Interval)\n")
-    comparison = 'Comparison'
-    s += f"{comparison:<{2*max_name_len+7}} Statistic   p-value  Lower CI  Upper CI  Significant\n"
-    for i in range(res.pvalue.shape[0]):
-        for j in range(i + 1, res.pvalue.shape[0]):
-            s += (
-                f" ({names[i]:>{max_name_len}} - {names[j]:<{max_name_len}}) "
-                f"{res.statistic[i, j]:>10.3f}"
-                f"{res.pvalue[i, j]:>10.3f}"
-                f"{confidence_level.low[i, j]:>10.3f}"
-                f"{confidence_level.high[i, j]:>10.3f}"
-                f"{(res.pvalue[i, j] <= alpha):>13}\n"
+def similarity_of_shape(
+    factor: str,
+    variable_name: str,
+    groups: dict[str, pd.Series],
+    output_folder: Path
+) -> None:
+    goggles = 'Goggles'
+    data = {
+        factor: pd.concat(groups.values()),
+        goggles: list(
+            itertools.chain.from_iterable(
+                [g_name] * len(group) for g_name, group in groups.items()
             )
-    return s
-
-
-def pairwise_comparisons(samples: dict[str, pd.Series], alpha: float = 0.05) -> bool:
-    keys = list(samples.keys())
-    res = tukey_hsd(*samples.values())
-    print(tukey_hsd_results_info(keys, res, alpha))
-    return any(res.pvalue.ravel() <= alpha)
+        )
+    }
+    df = pd.DataFrame(data)
+    colors = {
+        'Transparent': plotly.colors.qualitative.Plotly[0],
+        'Yellow': plotly.colors.qualitative.Plotly[9],
+        'Red': plotly.colors.qualitative.Plotly[1],
+    }
+    fig = px.histogram(df, x=goggles, color=factor, marginal='box', color_discrete_map=colors)
+    fig.update_layout(template='plotly_white')
+    fig.write_image(output_folder.joinpath(f"distplot_{variable_name}.png"), scale=3)

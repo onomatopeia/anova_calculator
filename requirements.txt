@@ -1,7 +1,9 @@
 scipy~=1.14.0
 pandas~=2.2.2
 odfpy
-
+kaleido~=0.4.2
+scikit-posthocs
 matplotlib~=3.9.1
 numpy~=2.0.0
 seaborn~=0.13.2
+plotly~=5.22.0

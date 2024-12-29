@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from goggles import anova_hsd, kruskal_wallis_dunn
+from goggles import assumptions, parametric, nonparametric
 
 data_file_path = Path(__file__).parent.joinpath('data', '20241217', 'data.ods')
 
@@ -51,7 +51,7 @@ columns = [
 dfs = {'Transparent': df_t, 'Yellow': df_y, 'Red': df_r}
 results_folder = Path(__file__).parent.joinpath('results')
 
-col = yellow_bag_column
+col = red_jacket_column
 output_folder = results_folder.joinpath(col)
 output_folder.mkdir(exist_ok=True)
 
@@ -59,22 +59,29 @@ samples = {df_name: df[col] for df_name, df in dfs.items()}
 print('ANOVA Assumptions')
 assumptions_passed = True
 print('\n1. Equal cell sizes')
-assumptions_passed &= anova_hsd.equal_size_samples(*samples.values())
+assumptions_passed &= assumptions.equal_size_samples(*samples.values())
 print('\n2. Normality')
-assumptions_passed &= anova_hsd.normality(samples, output_folder)
+assumptions_passed &= assumptions.normality(samples, output_folder)
 print('\n3. Homoscedasticity')
-assumptions_passed &= anova_hsd.equal_variances(*samples.values())
+assumptions_passed &= assumptions.equal_variances(*samples.values())
+print('\nKruskal-Wallis Test Assumptions')
+print('4. Similarity of shape')
+print('Shape should be verified manually in the associated distribution plots.')
+assumptions.similarity_of_shape('TFD', col, samples, output_folder)
 
 if assumptions_passed:
     print('\nAll ANOVA assumptions have passed.')
-
-    if anova_hsd.one_way_anova(*samples.values()):
-        result = anova_hsd.pairwise_comparisons(samples)
+    if parametric.mean_equality_between_groups(*samples.values()):
+        result = parametric.pairwise_comparisons(samples)
         if result:
-            print('At least one pair has significantly different means.')
+            print('At least one pair has significantly different means by ANOVA.')
         else:
-            print('No significant differences in pairs\' means.')
+            print('No significant differences in pairs\' means by ANOVA.')
 else:
     print('\nNot all ANOVA assumptions have passed. Switching to Kruskal-Wallis Test.')
-    print('4. Similarity of shape')
-    kruskal_wallis_dunn.similarity_of_shape(samples, output_folder)
+    if nonparametric.mean_equality_between_groups(*samples.values()):
+        result = nonparametric.pairwise_comparisons(samples)
+        if result:
+            print('At least one pair has significantly different means by Kruskal-Wallis test.')
+        else:
+            print('No significant differences in pairs\' means by Kruskal-Wallis test.')
