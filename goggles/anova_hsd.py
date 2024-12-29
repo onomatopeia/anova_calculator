@@ -1,15 +1,17 @@
 from collections import namedtuple
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.stats import f_oneway, chisquare, shapiro, probplot, levene
+from scipy.stats import f_oneway, chisquare, shapiro, probplot, levene, tukey_hsd
 
 TestResult = namedtuple('TestResult', ('statistic', 'pvalue'))
 
 
 def one_way_anova(*groups, alpha: float = 0.05) -> bool:
     res = TestResult._make(f_oneway(*groups))
+    print('\nANOVA Test for Equality of Means')
     if res.pvalue <= alpha:
         print("Reject the null hypothesis: Some of the groups' averages consider to be not equal.")
     else:
@@ -27,6 +29,7 @@ def equal_size_samples(*groups, alpha=0.05) -> bool:
     expected = [total_count / num_groups] * num_groups
 
     res = TestResult._make(chisquare(f_obs=observed, f_exp=expected))
+    print('Chi-Squared Test for Equal Samples\' Sizes')
     if res.pvalue <= alpha:
         print(f"Reject the null hypothesis: The counts {observed} are not evenly distributed.")
     else:
@@ -45,6 +48,7 @@ def normality(
 ) -> bool:
     results = {}
     normality_pass = True
+    print('Shapiro-Wilk Test for Normality')
     for g_name, group in groups.items():
         results[g_name] = res = TestResult._make(shapiro(group))
         if res.pvalue < alpha:
@@ -75,6 +79,7 @@ def normality(
 
 def equal_variances(*groups: pd.Series, alpha: float = 0.05) -> bool:
     res = TestResult._make(levene(*groups))
+    print('Levene Test for Homoscedasticity')
     if res.pvalue <= alpha:
         print(
             f"Reject the null hypothesis: Samples' variances are not equal."
@@ -87,5 +92,30 @@ def equal_variances(*groups: pd.Series, alpha: float = 0.05) -> bool:
     return res.pvalue > alpha
 
 
-def tukey_hsd(samples: dict[str, pd.Series]) -> None:
-    return None
+def tukey_hsd_results_info(names, res, alpha=0.05):
+
+    max_name_len = max(len(name) for name in names)
+
+    confidence_level = res.confidence_interval(confidence_level=1 - alpha)
+    s = ("Tukey's HSD Pairwise Group Comparisons"
+         f" ({(1 - alpha) * 100:.1f}% Confidence Interval)\n")
+    comparison = 'Comparison'
+    s += f"{comparison:<{2*max_name_len+7}} Statistic   p-value  Lower CI  Upper CI  Significant\n"
+    for i in range(res.pvalue.shape[0]):
+        for j in range(i + 1, res.pvalue.shape[0]):
+            s += (
+                f" ({names[i]:>{max_name_len}} - {names[j]:<{max_name_len}}) "
+                f"{res.statistic[i, j]:>10.3f}"
+                f"{res.pvalue[i, j]:>10.3f}"
+                f"{confidence_level.low[i, j]:>10.3f}"
+                f"{confidence_level.high[i, j]:>10.3f}"
+                f"{(res.pvalue[i, j] <= alpha):>13}\n"
+            )
+    return s
+
+
+def pairwise_comparisons(samples: dict[str, pd.Series], alpha: float = 0.05) -> bool:
+    keys = list(samples.keys())
+    res = tukey_hsd(*samples.values())
+    print(tukey_hsd_results_info(keys, res, alpha))
+    return any(res.pvalue.ravel() <= alpha)

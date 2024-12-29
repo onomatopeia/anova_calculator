@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from goggles import anova_hsd
+from goggles import anova_hsd, kruskal_wallis_dunn
 
 data_file_path = Path(__file__).parent.joinpath('data', '20241217', 'data.ods')
 
@@ -56,17 +56,25 @@ output_folder = results_folder.joinpath(col)
 output_folder.mkdir(exist_ok=True)
 
 samples = {df_name: df[col] for df_name, df in dfs.items()}
-print('Anova Assumptions')
+print('ANOVA Assumptions')
 assumptions_passed = True
-print('1. Equal cell sizes')
+print('\n1. Equal cell sizes')
 assumptions_passed &= anova_hsd.equal_size_samples(*samples.values())
-print('2. Normality')
+print('\n2. Normality')
 assumptions_passed &= anova_hsd.normality(samples, output_folder)
-print('3. Homoscedasticity')
+print('\n3. Homoscedasticity')
 assumptions_passed &= anova_hsd.equal_variances(*samples.values())
 
 if assumptions_passed:
-    print('All ANOVA assumptions have passed.')
+    print('\nAll ANOVA assumptions have passed.')
 
     if anova_hsd.one_way_anova(*samples.values()):
-        anova_hsd.tukey_hsd(samples)
+        result = anova_hsd.pairwise_comparisons(samples)
+        if result:
+            print('At least one pair has significantly different means.')
+        else:
+            print('No significant differences in pairs\' means.')
+else:
+    print('\nNot all ANOVA assumptions have passed. Switching to Kruskal-Wallis Test.')
+    print('4. Similarity of shape')
+    kruskal_wallis_dunn.similarity_of_shape(samples, output_folder)
