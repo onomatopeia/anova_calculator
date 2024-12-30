@@ -5,7 +5,7 @@ from goggles import evaluate_differences_in_means
 
 logger = logging.getLogger("colour")
 logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('results/tfd.log')
+fh = logging.FileHandler('results/ttff.log')
 fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 
@@ -26,12 +26,12 @@ if __name__ == '__main__':
         yellow_helmet_column,
     ]
     data_file_path = Path(__file__).parent.joinpath('data', '20241217', 'data.ods')
-    factor = 'TFD'
+    factor = 'TTFF'
 
     sheets = {
-        'Transparent': "TFD_T_Total_Fixation_Duration",
-        'Yellow': "TFD_Y_Total_Fixation_Duration",
-        'Red': "TFD_R_Total_Fixation_Duration",
+        'Transparent': "TTFF_T_Time_to_First_Fixation",
+        'Yellow': "TTFF_Y_Time_to_First_Fixation",
+        'Red': "TTFF_R_Time_to_First_Fixation",
     }
 
     evaluate_differences_in_means(data_file_path, columns, factor, sheets)
