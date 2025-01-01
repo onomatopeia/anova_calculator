@@ -10,19 +10,24 @@ from goggles.stats import TestResult, interpret_p_values
 logger = logging.getLogger("colour")
 
 
-def mean_equality_between_groups(*groups, alpha: float = 0.05) -> bool:
+def mean_equality_between_groups(*groups, alpha: float = 0.05, marginal_alpha: float = 0.1) -> bool:
     res = TestResult._make(kruskal(*groups))
     logger.debug('\nKruskal-Wallis Nonparametric Test for Equality of Means')
-    if res.pvalue <= alpha:
-        logger.debug(
-            "Reject the null hypothesis: Some of the groups' averages consider to be not equal."
+    if res.pvalue <= marginal_alpha:
+        if res.pvalue <= alpha:
+            logger.debug(
+                "Reject the null hypothesis: Some of the groups' averages consider to be not equal."
+            )
+        else:
+            logger.debug(
+                "Some of the groups' averages consider to be marginally not equal."
             )
     else:
         logger.debug(
             f"Fail to reject the null hypothesis: The average of all groups assumed to be equal."
         )
-    logger.debug(f"F Statistic: {res.statistic:.4f}, P-value: {res.pvalue:.4f}")
-    return res.pvalue <= alpha
+    logger.debug(f"H Statistic: {res.statistic:.4f}, P-value: {res.pvalue:.4f}")
+    return res.pvalue <= marginal_alpha
 
 
 def pairwise_comparisons(samples, alpha: float = 0.05, correction='holm') -> bool:

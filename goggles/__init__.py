@@ -69,6 +69,11 @@ def evaluate_differences_in_means(
         logger.debug(f"Variable: {col}")
         output_folder = results_folder.joinpath(col)
         output_folder.mkdir(exist_ok=True, parents=True)
-        samples = {df_name: df[col].dropna() for df_name, df in dfs.items()}
+        if factor == 'TTFF' and 'bucket' in col:
+            samples = {
+                df_name: df.loc[df[col] <= 11, col].dropna() for df_name, df in dfs.items()
+            }
+        else:
+            samples = {df_name: df[col].dropna() for df_name, df in dfs.items()}
         analysis_of_variance(factor, samples, output_folder, col)
         logger.debug("--------------------------------------------------------------------------\n")

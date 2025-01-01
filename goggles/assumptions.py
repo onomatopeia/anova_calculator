@@ -106,6 +106,6 @@ def similarity_of_shape(
         'Yellow': plotly.colors.qualitative.Plotly[9],
         'Red': plotly.colors.qualitative.Plotly[1],
     }
-    fig = px.histogram(df, x=goggles, color=factor, marginal='box', color_discrete_map=colors)
+    fig = px.histogram(df, x=factor, color=goggles, marginal='box', color_discrete_map=colors)
     fig.update_layout(template='plotly_white')
     fig.write_image(output_folder.joinpath(f"distplot_{variable_name}.png"), scale=3)

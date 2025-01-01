@@ -1,11 +1,14 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from goggles import evaluate_differences_in_means
 
+now = datetime.now().strftime("%Y%m%d_%H%M%S")
+
 logger = logging.getLogger("colour")
 logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('results/ttff.log')
+fh = logging.FileHandler(f'results/ttff_{now}.log')
 fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 
