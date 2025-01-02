@@ -2,7 +2,7 @@ import logging
 from collections.abc import Sequence
 
 import pandas as pd
-from scipy.stats import f_oneway, tukey_hsd
+from scipy.stats import f_oneway, tukey_hsd, ttest_ind
 from scipy.stats._hypotests import TukeyHSDResult
 
 from goggles.stats import TestResult, interpret_p_values
@@ -70,3 +70,22 @@ def pairwise_comparisons(samples: dict[str, pd.Series], alpha: float = 0.05) -> 
     logger.debug(res_df)
 
     return any(res.pvalue.ravel() <= alpha)
+
+
+def paired_t_test(
+    sample1: pd.Series,
+    sample2: pd.Series,
+    equal_var: bool,
+    nan_policy: str = 'omit',
+    alpha: float = 0.05,
+) -> bool:
+    res = ttest_ind(sample1, sample2, equal_var=equal_var, nan_policy=nan_policy)
+    if equal_var:
+        logger.debug(
+            f"Two independent samples standard t-test: t = {res.statistic}, p = {res.pvalue}."
+        )
+    else:
+        logger.debug(
+            f"Two independent samples Welch's t-test: t = {res.statistic}, p = {res.pvalue}"
+        )
+    return res.pvalue <= alpha
