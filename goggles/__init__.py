@@ -4,24 +4,31 @@ from pathlib import Path
 
 import pandas as pd
 
-from goggles import assumptions, nonparametric, parametric
+from goggles import assumptions, descriptive, nonparametric, parametric
+from goggles.power import calculate_anova_power
 
 logger = logging.getLogger("colour")
 
 
 def analysis_of_variance(factor, samples, output_folder, col):
+    logger.debug('Descriptive statistics')
+    descriptive.describe(samples)
     logger.debug('ANOVA Assumptions')
     assumptions_passed = True
     logger.debug('\n1. Equal cell sizes')
-    assumptions_passed &= assumptions.equal_size_samples(*samples.values())
+    equal_cell_sizes = assumptions.equal_size_samples(*samples.values())
+    assumptions_passed &= equal_cell_sizes
     logger.debug('\n2. Normality')
     assumptions_passed &= assumptions.normality(samples, output_folder)
     logger.debug('\n3. Homoscedasticity')
-    assumptions_passed &= assumptions.equal_variances(*samples.values())
+    assumptions_passed &= assumptions.equal_variances(
+        *samples.values(),
+        equal_cell_sizes=False,
+    )
     logger.debug('\nKruskal-Wallis Test Assumptions')
     logger.debug('4. Similarity of shape')
     logger.debug('Shape should be verified manually in the associated distribution plots.')
-    assumptions.similarity_of_shape(factor, col, samples, output_folder)
+    # assumptions.similarity_of_shape(factor, col, samples, output_folder)
 
     if assumptions_passed:
         logger.debug('\nAll ANOVA assumptions have passed.')
@@ -38,7 +45,7 @@ def analysis_of_variance(factor, samples, output_folder, col):
             if result:
                 logger.debug(
                     'At least one pair has significantly different means by Kruskal-Wallis test.'
-                    )
+                )
             else:
                 logger.debug('No significant differences in pairs\' means by Kruskal-Wallis test.')
 
@@ -64,6 +71,16 @@ def evaluate_differences_in_means(
 ) -> None:
     dfs = read_data(data_file_path, sheets)
     results_folder = Path(__file__).parents[1].joinpath('results', factor)
+    effect_sizes = {
+        'TFD': {
+            "R bucket": 0.25,
+            "R helmet + face": 0.1,
+            "R jacket": 0.25,
+            "Y bucket": 0.25,
+            "Y helmet + face": 0.25,
+            "Y bag": 0.25,
+        }
+    }
 
     for col in columns:
         logger.debug(f"Variable: {col}")
@@ -76,4 +93,6 @@ def evaluate_differences_in_means(
         else:
             samples = {df_name: df[col].dropna() for df_name, df in dfs.items()}
         analysis_of_variance(factor, samples, output_folder, col)
+        power = calculate_anova_power(effect_sizes[factor][col], *samples.values())
+        logger.debug(f"Power (effect size = {effect_sizes[factor][col]} = {power}")
         logger.debug("--------------------------------------------------------------------------\n")

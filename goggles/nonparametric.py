@@ -4,13 +4,44 @@ import numpy as np
 import pandas as pd
 import scikit_posthocs as sp
 from scipy.stats import kruskal
-
+import pingouin as pg
 from goggles.stats import TestResult, interpret_p_values
 
 logger = logging.getLogger("colour")
 
 
 def mean_equality_between_groups(*groups, alpha: float = 0.05, marginal_alpha: float = 0.1) -> bool:
+    return welch_nonparametric_anova(*groups, alpha=alpha, marginal_alpha=marginal_alpha)
+
+
+def welch_nonparametric_anova(*groups, alpha, marginal_alpha) -> bool:
+    groups_names = ['A'] * len(groups[0]) + ['B'] * len(groups[1]) + ['C'] * len(groups[2])
+    values = pd.concat(groups, ignore_index=True)
+    df = pd.DataFrame({'group': groups_names, 'value': values})
+
+    welch_res = pg.welch_anova(dv='value', between='group', data=df).iloc[0]
+
+    logger.debug('\nWelch\'s ANOVA')
+    pvalue = welch_res['p-unc']
+    if pvalue <= marginal_alpha:
+        if pvalue <= alpha:
+            logger.debug(
+                "Reject the null hypothesis: Some of the groups' averages consider to be not equal."
+            )
+        else:
+            logger.debug(
+                "Some of the groups' averages consider to be marginally not equal."
+            )
+    else:
+        logger.debug(
+            f"Fail to reject the null hypothesis: The average of all groups assumed to be equal."
+        )
+    logger.debug(f"F Statistic: {welch_res['F']:.4f}, P-value: {pvalue:.4f}")
+    logger.debug(f"Power {welch_res['np2']}")
+    return welch_res['p-unc'] <= marginal_alpha
+
+
+def kruskal_wallis_nonparametric_anove(*groups, alpha, marginal_alpha) -> bool:
     res = TestResult._make(kruskal(*groups))
     logger.debug('\nKruskal-Wallis Nonparametric Test for Equality of Means')
     if res.pvalue <= marginal_alpha:

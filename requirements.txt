@@ -7,3 +7,5 @@ matplotlib~=3.9.1
 numpy~=2.0.0
 seaborn~=0.13.2
 plotly~=5.22.0
+statsmodels~=0.14.2
+pingouin

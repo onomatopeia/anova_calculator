@@ -24,7 +24,7 @@ def equal_size_samples(*groups, alpha=0.05) -> bool:
     if res.pvalue <= alpha:
         logger.debug(
             f"Reject the null hypothesis: The counts {observed} are not evenly distributed."
-            )
+        )
     else:
         logger.debug(
             f"Fail to reject the null hypothesis: "
@@ -70,13 +70,19 @@ def normality(
     return normality_pass
 
 
-def equal_variances(*groups: pd.Series, alpha: float = 0.05) -> bool:
+def equal_variances(*groups: pd.Series, equal_cell_sizes: bool, alpha: float = 0.05) -> bool:
     res = TestResult._make(levene(*groups))
     logger.debug('Levene Test for Homoscedasticity')
     if res.pvalue <= alpha:
         logger.debug(
             f"Reject the null hypothesis: Samples' variances are not equal."
         )
+        if equal_cell_sizes:
+            logger.debug(
+                "ANOVA is considered robust to homogeneity of variances assumption "
+                "when the groups' sizes are similar"
+            )
+            return equal_cell_sizes
     else:
         logger.debug(
             f"Fail to reject the null hypothesis: Samples' variances are roughly equal."
