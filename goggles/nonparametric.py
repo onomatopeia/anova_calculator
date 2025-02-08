@@ -10,21 +10,24 @@ from goggles.stats import TestResult, interpret_p_values
 logger = logging.getLogger("colour")
 
 
-def mean_equality_between_groups(*groups, alpha: float = 0.05, marginal_alpha: float = 0.1) -> bool:
-    return welch_nonparametric_anova(*groups, alpha=alpha, marginal_alpha=marginal_alpha)
-
-
-def welch_nonparametric_anova(*groups, alpha, marginal_alpha) -> bool:
-    groups_names = ['A'] * len(groups[0]) + ['B'] * len(groups[1]) + ['C'] * len(groups[2])
-    values = pd.concat(groups, ignore_index=True)
+def mean_equality_between_groups(
+    samples: dict[str, pd.Series],
+    alpha: float = 0.05,
+    marginal_alpha: float = 0.1
+) -> bool:
+    groups_names = []
+    values = []
+    for sample_name, sample_values in samples.items():
+        groups_names.extend([sample_name] * len(sample_values))
+        values.extend(sample_values.to_list())
     df = pd.DataFrame({'group': groups_names, 'value': values})
 
     welch_res = pg.welch_anova(dv='value', between='group', data=df).iloc[0]
 
     logger.debug('\nWelch\'s ANOVA')
-    pvalue = welch_res['p-unc']
-    if pvalue <= marginal_alpha:
-        if pvalue <= alpha:
+    p_value = welch_res['p-unc']
+    if p_value <= marginal_alpha:
+        if p_value <= alpha:
             logger.debug(
                 "Reject the null hypothesis: Some of the groups' averages consider to be not equal."
             )
@@ -32,16 +35,19 @@ def welch_nonparametric_anova(*groups, alpha, marginal_alpha) -> bool:
             logger.debug(
                 "Some of the groups' averages consider to be marginally not equal."
             )
+        gh_res = pg.pairwise_gameshowell(dv='value', between='group', data=df)
+        logger.debug('Games-Howell pairwise comparison')
+        logger.debug(gh_res.to_markdown())
     else:
         logger.debug(
             f"Fail to reject the null hypothesis: The average of all groups assumed to be equal."
         )
-    logger.debug(f"F Statistic: {welch_res['F']:.4f}, P-value: {pvalue:.4f}")
-    logger.debug(f"Power {welch_res['np2']}")
+    logger.debug(f"F Statistic: {welch_res['F']:.4f}, P-value: {p_value:.4f}")
+    logger.debug(f"Observed effect size {welch_res['np2']}")
     return welch_res['p-unc'] <= marginal_alpha
 
 
-def kruskal_wallis_nonparametric_anove(*groups, alpha, marginal_alpha) -> bool:
+def kruskal_wallis_nonparametric_anova(*groups, alpha, marginal_alpha) -> bool:
     res = TestResult._make(kruskal(*groups))
     logger.debug('\nKruskal-Wallis Nonparametric Test for Equality of Means')
     if res.pvalue <= marginal_alpha:
@@ -61,7 +67,7 @@ def kruskal_wallis_nonparametric_anove(*groups, alpha, marginal_alpha) -> bool:
     return res.pvalue <= marginal_alpha
 
 
-def pairwise_comparisons(samples, alpha: float = 0.05, correction='holm') -> bool:
+def pairwise_comparisons_dunn(samples, alpha: float = 0.05, correction='holm') -> bool:
     """Post hoc pairwise test for multiple comparisons of mean rank sums (Dunn’s test).
 
     :param samples: A factor value - observations dictionary.

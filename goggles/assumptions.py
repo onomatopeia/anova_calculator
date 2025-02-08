@@ -70,19 +70,13 @@ def normality(
     return normality_pass
 
 
-def equal_variances(*groups: pd.Series, equal_cell_sizes: bool, alpha: float = 0.05) -> bool:
+def equal_variances(*groups: pd.Series, alpha: float = 0.05) -> bool:
     res = TestResult._make(levene(*groups))
     logger.debug('Levene Test for Homoscedasticity')
     if res.pvalue <= alpha:
         logger.debug(
             f"Reject the null hypothesis: Samples' variances are not equal."
         )
-        if equal_cell_sizes:
-            logger.debug(
-                "ANOVA is considered robust to homogeneity of variances assumption "
-                "when the groups' sizes are similar"
-            )
-            return equal_cell_sizes
     else:
         logger.debug(
             f"Fail to reject the null hypothesis: Samples' variances are roughly equal."
@@ -114,4 +108,5 @@ def similarity_of_shape(
     }
     fig = px.histogram(df, x=factor, color=goggles, marginal='box', color_discrete_map=colors)
     fig.update_layout(template='plotly_white')
-    fig.write_image(output_folder.joinpath(f"distplot_{variable_name}.png"), scale=3)
+    # fig.write_image(output_folder.joinpath(f"distplot_{variable_name}.png"), scale=3)
+    fig.show()

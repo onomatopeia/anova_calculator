@@ -4,10 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from goggles import (
-    analysis_of_variance, assumptions, evaluate_differences_in_means, parametric,
-    read_data,
-)
+from goggles import analysis_of_variance
 
 now = datetime.now().strftime("%Y%m%d_%H%M%S")
 
