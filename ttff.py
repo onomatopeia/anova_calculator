@@ -37,4 +37,11 @@ if __name__ == '__main__':
         'Red': "TTFF_R_Time_to_First_Fixation",
     }
 
-    evaluate_differences_in_means(data_file_path, columns, factor, sheets)
+    evaluate_differences_in_means(
+        data_file_path,
+        columns,
+        factor,
+        sheets,
+        trim_fraction=0.2,
+        calculate_boxcox=False,
+    )

@@ -47,7 +47,7 @@ def mean_equality_between_groups(
     return welch_res['p-unc'] <= marginal_alpha
 
 
-def kruskal_wallis_nonparametric_anova(*groups, alpha, marginal_alpha) -> bool:
+def kruskal_wallis_nonparametric_anova(*groups, alpha=0.05, marginal_alpha=0.1) -> bool:
     res = TestResult._make(kruskal(*groups))
     logger.debug('\nKruskal-Wallis Nonparametric Test for Equality of Means')
     if res.pvalue <= marginal_alpha:

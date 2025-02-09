@@ -37,4 +37,4 @@ if __name__ == '__main__':
         'Red': "TFD_R_Total_Fixation_Duration",
     }
 
-    evaluate_differences_in_means(data_file_path, columns, factor, sheets)
+    evaluate_differences_in_means(data_file_path, columns, factor, sheets, trim_fraction=0.1)

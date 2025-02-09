@@ -48,13 +48,14 @@ def normality(
             logger.debug(
                 f"Reject the null hypothesis: The sample {g_name} is not normally distributed."
             )
-            if len(group) >= 30:
+            normality_pass = False
+            """if len(group) >= 30:
                 logger.debug(
                     'Sample size is equal or greater than 30 and can be considered sufficient for '
                     'CLT to hold.'
                 )
             else:
-                normality_pass = False
+                normality_pass = False"""
         else:
             logger.debug(
                 f"Fail to reject the null hypothesis: "

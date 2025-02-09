@@ -11,3 +11,4 @@ def describe(samples: dict[str, pd.Series]) -> None:
         logger.debug(f'[{group.min()}, {group.max()}]')
         logger.debug(f'{group.median()}')
         logger.debug(f'{group.mean()} +- {group.std()}')
+        logger.debug(f'Kurtosis: {group.kurtosis()}, skewness: {group.skew()}')
