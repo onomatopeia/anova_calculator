@@ -43,5 +43,4 @@ if __name__ == '__main__':
         factor,
         sheets,
         trim_fraction=0.2,
-        calculate_boxcox=False,
     )

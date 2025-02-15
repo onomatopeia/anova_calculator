@@ -7,7 +7,7 @@ import pandas as pd
 import scipy.stats
 from scipy.stats import median_test
 
-from goggles import assumptions, descriptive, effect_size, nonparametric, parametric
+from goggles import assumptions, descriptive, effect_size, nonparametric, parametric, robust_anova
 from goggles.power import calculate_anova_power
 from goggles.utils import trim_data
 
@@ -64,18 +64,21 @@ def analysis_of_variance(factor, samples, output_folder, col):
             else:
                 logger.debug('No significant differences in pairs\' means by ANOVA.')
         logger.debug(f'Effect size: {effect_size.anova_eta_squared(*samples.values())}')
-    elif not homoscedasticity:
+    elif not homoscedasticity and normality:
         logger.debug('\nNot all ANOVA assumptions have passed. Switching to Welch\'s ANOVA.')
         nonparametric.mean_equality_between_groups(samples)
-    elif not normality:
+    elif not normality and homoscedasticity:
         logger.debug(
             '\nNormality not passed, but variance roughly equal. Switching to Kruskal-Wallis test'
         )
         if nonparametric.kruskal_wallis_nonparametric_anova(*samples.values()):
             nonparametric.pairwise_comparisons_dunn(samples)
             logger.debug(f'Effect size: {effect_size.kruskal_wallis_eta_squared(*samples.values())}')
+    else:
+        logger.debug('Neither normality nor homoscedasticity')
 
-
+    logger.debug('Running Robust ANOVA')
+    robust_anova.one_way_anova(samples)
 
 
 def read_data(file_path: Path, sheets: dict[str, str]):
@@ -157,6 +160,7 @@ def evaluate_differences_in_means(
             )
             for sample_name, sample_data in samples.items()
         }
+
 
         analysis_of_variance(factor, samples, output_folder, col)
         logger.debug("--------------------------------------------------------------------------\n")
