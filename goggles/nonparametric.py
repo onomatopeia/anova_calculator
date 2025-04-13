@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 import scikit_posthocs as sp
-from scipy.stats import kruskal
+from scipy.stats import kruskal, mannwhitneyu
 import pingouin as pg
 from goggles.stats import TestResult, interpret_p_values
 
@@ -90,3 +90,11 @@ def pairwise_comparisons_dunn(samples, alpha: float = 0.05, correction='holm') -
     logger.debug('\nPost-hoc Dunn\'s Test for multiple comparisons of mean rank sums')
     logger.debug(df_transformed)
     return (df_transformed['p-value'] <= alpha).any()
+
+
+def mann_whitney_u_test(sample1, sample2, alpha: float = 0.05) -> bool:
+    res = mannwhitneyu(sample1, sample2)
+    logger.debug(
+        f"Two independent samples Mann-Whitney U-test: U = {res.statistic}, p = {res.pvalue}"
+    )
+    return res.pvalue <= alpha

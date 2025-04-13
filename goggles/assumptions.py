@@ -36,7 +36,7 @@ def equal_size_samples(*groups, alpha=0.05) -> bool:
 
 def normality(
     groups: dict[str, pd.Series],
-    output_folder: Path,
+    output_folder: Path | None = None,
     alpha: float = 0.05,
 ) -> bool:
     results = {}
@@ -62,11 +62,11 @@ def normality(
                 f"The sample {g_name} is roughly normally distributed."
             )
         logger.debug(f"{g_name}: W Statistic: {res.statistic:.4f}, P-value: {res.pvalue:.4f}")
-
-        probplot(group, dist="norm", plot=plt)
-        plt.title(f'Probability Plot - {g_name} Goggles')
-        plt.savefig(output_folder.joinpath(f'{g_name}.png'), bbox_inches='tight', dpi=300)
-        plt.close()
+        if output_folder is not None:
+            probplot(group, dist="norm", plot=plt)
+            plt.title(f'Probability Plot - {g_name} Goggles')
+            plt.savefig(output_folder.joinpath(f'{g_name}.png'), bbox_inches='tight', dpi=300)
+            plt.close()
 
     return normality_pass
 

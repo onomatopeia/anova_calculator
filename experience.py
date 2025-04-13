@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from goggles import assumptions, parametric
+from goggles import assumptions, nonparametric, parametric
 
 now = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -25,10 +25,14 @@ def evaluate(df, experience_column, results_folder, columns):
         output_folder.mkdir(exist_ok=True, parents=True)
         exp = df_experienced[col].dropna()
         inexp = df_inexperienced[col].dropna()
+        normality = assumptions.normality({'exp': exp, 'inexp': inexp})
         equal_var = assumptions.equal_variances(exp, inexp)
         logger.debug(f'Experienced mean: {exp.mean()}')
         logger.debug(f'Inexperienced mean: {inexp.mean()}')
-        parametric.paired_t_test(exp, inexp, equal_var)
+        if normality:
+            parametric.paired_t_test(exp, inexp, equal_var)
+        else:
+            nonparametric.mann_whitney_u_test(exp, inexp)
         logger.debug("--------------------------------------------------------------------------\n")
 
 
